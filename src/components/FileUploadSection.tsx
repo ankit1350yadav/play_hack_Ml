@@ -15,9 +15,14 @@ import {
   Code2,
   Trash2,
   RefreshCw,
-  Plus
+  Plus,
+  Archive,
+  Download,
+  Check,
+  Loader2
 } from 'lucide-react';
 import { DatasetState, TaskType, OptimizationMetric, ValidationStrategy, ImputationStrategy, ScalerType, CategoricalEncoding } from '../types';
+import { triggerDownloadZip } from '../utils/zipExporter';
 
 interface FileUploadSectionProps {
   state: DatasetState;
@@ -43,6 +48,21 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
   const [uploadMode, setUploadMode] = useState<'file' | 'paste'>('file');
   const [pastedCsv, setPastedCsv] = useState<string>('');
   const [customFileName, setCustomFileName] = useState<string>('custom_dataset.csv');
+  const [isZipping, setIsZipping] = useState(false);
+  const [zipSuccess, setZipSuccess] = useState(false);
+
+  const handleDownloadZip = async () => {
+    try {
+      setIsZipping(true);
+      await triggerDownloadZip(state);
+      setZipSuccess(true);
+      setTimeout(() => setZipSuccess(false), 3500);
+    } catch (err) {
+      console.error('Failed to create ZIP:', err);
+    } finally {
+      setIsZipping(false);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -104,30 +124,73 @@ export const FileUploadSection: React.FC<FileUploadSectionProps> = ({
             </p>
           </div>
 
-          {/* Mode Switcher */}
-          <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+          {/* Action Buttons: Mode Switcher & Direct ZIP Download */}
+          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
             <button
-              onClick={() => setUploadMode('file')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                uploadMode === 'file'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-slate-400 hover:text-white'
+              onClick={handleDownloadZip}
+              disabled={isZipping || state.rawData.length === 0}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-md ${
+                state.rawData.length === 0
+                  ? 'bg-slate-800/60 text-slate-500 border border-slate-700/50 cursor-not-allowed'
+                  : zipSuccess
+                  ? 'bg-emerald-600 border border-emerald-500 text-white shadow-emerald-600/30'
+                  : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white shadow-emerald-600/25 border border-emerald-500/40'
               }`}
+              title={state.rawData.length === 0 ? 'Upload data to generate submission ZIP' : 'Download complete submission ZIP project'}
             >
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span>Upload CSV File</span>
+              {isZipping ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Packaging ZIP...</span>
+                </>
+              ) : zipSuccess ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Downloaded ZIP!</span>
+                </>
+              ) : (
+                <>
+                  <Archive className="w-3.5 h-3.5" />
+                  <span>Download Project (.ZIP)</span>
+                </>
+              )}
             </button>
-            <button
-              onClick={() => setUploadMode('paste')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                uploadMode === 'paste'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+
+            {/* Direct Link to Source Code Zip */}
+            <a
+              href="/project_source_code.zip"
+              download="web_app_source_code.zip"
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition-all shadow-sm"
+              title="Download the complete Web Application source code bundle"
             >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Paste Raw CSV Text</span>
-            </button>
+              <Download className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Full App Source (.ZIP)</span>
+            </a>
+
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setUploadMode('file')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  uploadMode === 'file'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Upload File</span>
+              </button>
+              <button
+                onClick={() => setUploadMode('paste')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  uploadMode === 'paste'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Paste Text</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

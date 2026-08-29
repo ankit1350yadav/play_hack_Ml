@@ -1,0 +1,6 @@
+{
+  "name": "PLAY HACK ML - Sports Analytics & Predictive Modeling",
+  "description": "End-to-end sports analytics machine learning pipeline, exploratory data analysis, and predictive modeling for IIT Guwahati PLAY HACK ML Track Round 1.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
